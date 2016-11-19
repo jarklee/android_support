@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /*******************************************************************************
+  ~ * Copyright Ⓒ 2016. Dotohsoft.com. All right reversed
+  ~ * Author TrinhQuan. Create on 2016/4/22
+  ~ ********************************************************************************/
+  -->
+
+<resources>
+    <bool name="isLandScape">true</bool>
+</resources>

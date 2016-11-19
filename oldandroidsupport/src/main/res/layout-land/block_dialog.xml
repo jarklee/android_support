@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /*******************************************************************************
+  ~ * Copyright Ⓒ 2016. Dotohsoft.com. All right reversed
+  ~ * Author TrinhQuan. Create on 2016/4/22
+  ~ ********************************************************************************/
+  -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="360dp"
+              android:layout_height="wrap_content"
+              android:background="#fff"
+              android:gravity="center"
+              android:minWidth="360dp"
+              android:orientation="vertical"
+              android:padding="@dimen/content_padding">
+
+    <TextView
+        android:id="@+id/tvMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/processing_message"
+        android:textColor="@color/dark_primary_text_color"
+        android:textSize="@dimen/content_text_size"/>
+
+    <com.wang.avi.AVLoadingIndicatorView
+        android:id="@+id/indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:visibility="visible"
+        app:indicator="BallPulse"
+        app:indicator_color="@color/colorPrimary"/>
+</LinearLayout>

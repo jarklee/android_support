@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright Ⓒ 2016. TrinhQuan. All right reversed
+  ~ Author: TrinhQuan. Created on 2016/3/26
+  ~ Contact: trinhquan.171093@gmail.com
+  -->
+
+<FrameLayout
+    android:id="@+id/prbWorking"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/opacity_black_color"
+    android:orientation="vertical">
+
+    <ProgressBar
+        style="@style/Widget.AppCompat.ProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="invisible"/>
+</FrameLayout>

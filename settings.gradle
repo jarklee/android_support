@@ -1,0 +1,8 @@
+include ':androidsupport', ':kotlinandroidsupport', ':oldandroidsupport'
+/*
+ * ******************************************************************************
+ *  Copyright Ⓒ 2016. Dotohsoft.com. All right reserved
+ *  Author TrinhQuan. Create on 2016/11/19
+ * ******************************************************************************
+ */
+

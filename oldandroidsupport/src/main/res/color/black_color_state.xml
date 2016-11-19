@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /*******************************************************************************
+  ~ * Copyright Ⓒ 2016. Dotohsoft.com. All right reversed
+  ~ * Author TrinhQuan. Create on 2016/4/11
+  ~ ********************************************************************************/
+  -->
+
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/dark_disable_color" android:state_enabled="false"/>
+    <item android:color="@color/dark_primary_text_color"/>
+</selector>
