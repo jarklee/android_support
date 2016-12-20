@@ -1,13 +1,14 @@
 /*
  * ******************************************************************************
- *  Copyright Ⓒ 2016. TrinhQuan. All right reversed
- *  Author: TrinhQuan. Created on 2016/10/28
+ *  Copyright Ⓒ 2016. TrinhQuan. All right reserved
+ *  Author: TrinhQuan. Created on 2016/12/20
  *  Contact: trinhquan.171093@gmail.com
  * ******************************************************************************
  */
 
 package com.tq.libs.lifecycle;
 
+import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
@@ -17,6 +18,7 @@ import android.support.v4.app.FragmentActivity;
 
 import com.tq.libs.callback.LifeCycleListener;
 
+@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class HeadlessFragment extends Fragment implements LifeCycleHook {
 
     private LifeCycleCollection cycleListeners;

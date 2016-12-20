@@ -1,7 +1,8 @@
 /*
  * ******************************************************************************
- *  Copyright Ⓒ 2016. Dotohsoft.com. All right reserved
- *  Author TrinhQuan. Create on 2016/11/6
+ *  Copyright Ⓒ 2016. TrinhQuan. All right reserved
+ *  Author: TrinhQuan. Created on 2016/12/20
+ *  Contact: trinhquan.171093@gmail.com
  * ******************************************************************************
  */
 

@@ -1,3 +1,11 @@
+<!--
+  ~ /*******************************************************************************
+  ~ * Copyright Ⓒ 2016. TrinhQuan. All right reserved
+  ~ * Author: TrinhQuan. Created on 2016/12/20
+  ~ * Contact: trinhquan.171093@gmail.com
+  ~ ********************************************************************************/
+  -->
+
 <resources>
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>

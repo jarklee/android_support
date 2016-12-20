@@ -1,7 +1,7 @@
 /*
  * ******************************************************************************
- *  Copyright Ⓒ 2016. TrinhQuan. All right reversed
- *  Author: TrinhQuan. Created on 2016/8/15
+ *  Copyright Ⓒ 2016. TrinhQuan. All right reserved
+ *  Author: TrinhQuan. Created on 2016/12/20
  *  Contact: trinhquan.171093@gmail.com
  * ******************************************************************************
  */
