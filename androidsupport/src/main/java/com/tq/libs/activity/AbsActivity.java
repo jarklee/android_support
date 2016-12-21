@@ -34,8 +34,8 @@ public abstract class AbsActivity extends AppCompatActivity {
 
     @CheckResult
     protected final ServiceConnector bindToService(Class<? extends Service> serviceClass,
-                                                   @BindServiceFlag int flag) {
-        return bindToService(serviceClass, null, flag);
+                                                   @BindServiceFlag int flags) {
+        return bindToService(serviceClass, null, flags);
     }
 
     @CheckResult
@@ -47,8 +47,8 @@ public abstract class AbsActivity extends AppCompatActivity {
     @CheckResult
     protected final ServiceConnector bindToService(Class<? extends Service> serviceClass,
                                                    ServiceConnector.ServiceConnectorDelegate connection,
-                                                   @BindServiceFlag int flag) {
-        ServiceConnector serviceConnector = new ServiceConnector(this, serviceClass, flag);
+                                                   @BindServiceFlag int flags) {
+        ServiceConnector serviceConnector = new ServiceConnector(this, serviceClass, flags);
         serviceConnector.bindService(connection);
         return serviceConnector;
     }
@@ -62,14 +62,15 @@ public abstract class AbsActivity extends AppCompatActivity {
         navigateToActivity(activity, data, 0);
     }
 
-    protected final void navigateToActivity(@NonNull Class<? extends Activity> activity, int flag) {
-        navigateToActivity(activity, null, flag);
+    protected final void navigateToActivity(@NonNull Class<? extends Activity> activity,
+                                            int flags) {
+        navigateToActivity(activity, null, flags);
     }
 
     protected final void navigateToActivity(@NonNull Class<? extends Activity> activity,
-                                            @Nullable Bundle data, int flag) {
+                                            @Nullable Bundle data, int flags) {
         Intent intent = new Intent(this, activity);
-        intent.addFlags(flag);
+        intent.addFlags(flags);
         if (data != null) {
             intent.putExtras(data);
         }
@@ -77,12 +78,21 @@ public abstract class AbsActivity extends AppCompatActivity {
     }
 
     protected final void navigateToActivityForResult(Class<? extends Activity> activity, int requestCode) {
-        navigateToActivityForResult(activity, null, requestCode);
+        navigateToActivityForResult(activity, null, requestCode, 0);
     }
 
     protected final void navigateToActivityForResult(Class<? extends Activity> activity,
-                                                     @Nullable Bundle data, int requestCode) {
+                                                     @Nullable Bundle data,
+                                                     int requestCode) {
+        navigateToActivityForResult(activity, data, requestCode, 0);
+    }
+
+    protected final void navigateToActivityForResult(Class<? extends Activity> activity,
+                                               @Nullable Bundle data,
+                                               int requestCode,
+                                               int flags) {
         Intent intent = new Intent(this, activity);
+        intent.addFlags(flags);
         if (data != null) {
             intent.putExtras(data);
         }

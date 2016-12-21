@@ -8,6 +8,7 @@
 
 package com.tq.klibs.lifecycle
 
+import android.annotation.TargetApi
 import android.app.Fragment
 import android.content.Context
 import android.os.Build
@@ -15,6 +16,7 @@ import android.os.Bundle
 import android.support.v4.app.FragmentActivity
 import com.tq.klibs.callback.LifeCycleListener
 
+@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 class HeadlessFragment : Fragment(), LifeCycleHook {
 
     private lateinit var cycleListeners: LifeCycleCollection

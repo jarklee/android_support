@@ -69,13 +69,22 @@ public abstract class AbsFragment extends Fragment {
         startActivity(intent);
     }
 
-    protected void navigateToActivityForResult(@NonNull Class<? extends Activity> activityClass, int requestCode) {
-        navigateToActivityForResult(activityClass, null, requestCode);
+    protected final void navigateToActivityForResult(@NonNull Class<? extends Activity> activityClass,
+                                                     int requestCode) {
+        navigateToActivityForResult(activityClass, null, requestCode, 0);
     }
 
-    protected void navigateToActivityForResult(@NonNull Class<? extends Activity> activityClass,
-                                               @Nullable Bundle bundle, int requestCode) {
+    protected final void navigateToActivityForResult(@NonNull Class<? extends Activity> activityClass,
+                                                     @Nullable Bundle bundle, int requestCode) {
+        navigateToActivityForResult(activityClass, bundle, requestCode, 0);
+    }
+
+    protected final void navigateToActivityForResult(@NonNull Class<? extends Activity> activityClass,
+                                                     @Nullable Bundle bundle,
+                                                     int requestCode,
+                                                     int flags) {
         Intent intent = new Intent(getActivity(), activityClass);
+        intent.addFlags(flags);
         if (bundle != null) {
             intent.putExtras(bundle);
         }

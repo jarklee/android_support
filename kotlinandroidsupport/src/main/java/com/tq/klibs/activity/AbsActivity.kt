@@ -47,8 +47,10 @@ fun Activity.navigateToActivity(activity: Class<out Activity>,
 
 fun Activity.navigateToActivityForResult(activity: Class<out Activity>,
                                          data: Bundle? = null,
-                                         requestCode: Int) {
+                                         requestCode: Int,
+                                         flags: Int = 0) {
     val intent = Intent(this, activity)
+    intent.addFlags(flags)
     if (data != null) {
         intent.putExtras(data)
     }

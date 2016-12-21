@@ -63,8 +63,10 @@ fun Fragment.navigateToActivity(activityClass: Class<out Activity>,
 
 fun Fragment.navigateToActivityForResult(activityClass: Class<out Activity>,
                                          bundle: Bundle? = null,
-                                         requestCode: Int) {
+                                         requestCode: Int,
+                                         flags: Int = 0) {
     val intent = Intent(activity, activityClass)
+    intent.addFlags(flags)
     if (bundle != null) {
         intent.putExtras(bundle)
     }

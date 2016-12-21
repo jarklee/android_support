@@ -49,12 +49,20 @@ public abstract class AbsActivity extends AppCompatActivity {
     }
 
     protected final void navigateToActivityForResult(Class<? extends Activity> activity, int requestCode) {
-        navigateToActivityForResult(activity, null, requestCode);
+        navigateToActivityForResult(activity, null, requestCode, 0);
     }
 
     protected final void navigateToActivityForResult(Class<? extends Activity> activity,
                                                      @Nullable Bundle data, int requestCode) {
+        navigateToActivityForResult(activity, data, requestCode, 0);
+    }
+
+    protected final void navigateToActivityForResult(Class<? extends Activity> activity,
+                                                     @Nullable Bundle data,
+                                                     int requestCode,
+                                                     int flags) {
         Intent intent = new Intent(this, activity);
+        intent.addFlags(flags);
         if (data != null) {
             intent.putExtras(data);
         }

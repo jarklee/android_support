@@ -32,8 +32,8 @@ public abstract class AbsFragment extends Fragment {
 
     @CheckResult
     protected final ServiceConnector bindToService(Class<? extends Service> serviceClass,
-                                                   @BindServiceFlag int flag) {
-        return bindToService(serviceClass, null, flag);
+                                                   @BindServiceFlag int flags) {
+        return bindToService(serviceClass, null, flags);
     }
 
     @CheckResult
@@ -45,8 +45,8 @@ public abstract class AbsFragment extends Fragment {
     @CheckResult
     protected final ServiceConnector bindToService(Class<? extends Service> serviceClass,
                                                    ServiceConnector.ServiceConnectorDelegate connection,
-                                                   @BindServiceFlag int flag) {
-        ServiceConnector serviceConnector = new ServiceConnector(getContext(), serviceClass, flag);
+                                                   @BindServiceFlag int flags) {
+        ServiceConnector serviceConnector = new ServiceConnector(getContext(), serviceClass, flags);
         serviceConnector.bindService(connection);
         return serviceConnector;
     }
@@ -81,9 +81,9 @@ public abstract class AbsFragment extends Fragment {
     }
 
     protected final void navigateToActivity(@NonNull Class<? extends Activity> activityClass,
-                                            @Nullable Bundle bundle, int flag) {
+                                            @Nullable Bundle bundle, int flags) {
         Intent intent = new Intent(getActivity(), activityClass);
-        intent.addFlags(flag);
+        intent.addFlags(flags);
         if (bundle != null) {
             intent.putExtras(bundle);
         }
@@ -92,12 +92,20 @@ public abstract class AbsFragment extends Fragment {
 
     protected final void navigateToActivityForResult(@NonNull Class<? extends Activity> activityClass,
                                                      int requestCode) {
-        navigateToActivityForResult(activityClass, null, requestCode);
+        navigateToActivityForResult(activityClass, null, requestCode, 0);
     }
 
     protected final void navigateToActivityForResult(@NonNull Class<? extends Activity> activityClass,
                                                      @Nullable Bundle bundle, int requestCode) {
+        navigateToActivityForResult(activityClass, bundle, requestCode, 0);
+    }
+
+    protected final void navigateToActivityForResult(@NonNull Class<? extends Activity> activityClass,
+                                                     @Nullable Bundle bundle,
+                                                     int requestCode,
+                                                     int flags) {
         Intent intent = new Intent(getActivity(), activityClass);
+        intent.addFlags(flags);
         if (bundle != null) {
             intent.putExtras(bundle);
         }
@@ -131,7 +139,9 @@ public abstract class AbsFragment extends Fragment {
             mProgressDialog = ProgressDialog.show(getActivity(), null, msg, false, true);
         }
         mProgressDialog.setMessage(msg);
-        mProgressDialog.show();
+        if (!mProgressDialog.isShowing()) {
+            mProgressDialog.show();
+        }
     }
 
     @UiThread
