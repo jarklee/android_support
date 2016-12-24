@@ -11,7 +11,7 @@ package com.tq.libs.service;
 import android.os.Handler;
 import android.os.Message;
 
-import com.tq.libs.common.Handleable;
+import com.jarklee.essential.common.Handleable;
 
 import java.lang.ref.WeakReference;
 

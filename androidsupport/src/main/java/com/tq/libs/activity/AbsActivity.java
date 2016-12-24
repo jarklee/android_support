@@ -26,8 +26,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.WindowManager;
 
-import com.tq.libs.annotation.BindServiceFlag;
-import com.tq.libs.common.helper.PermissionHelper;
+import com.jarklee.essential.annotation.BindServiceFlag;
+import com.jarklee.essential.common.helper.PermissionHelper;
 import com.tq.libs.service.ServiceConnector;
 
 public abstract class AbsActivity extends AppCompatActivity {

@@ -25,7 +25,7 @@ import android.support.annotation.UiThread;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 
-import com.tq.libs.annotation.BindServiceFlag;
+import com.jarklee.essential.annotation.BindServiceFlag;
 import com.tq.libs.service.ServiceConnector;
 
 public abstract class AbsFragment extends Fragment {

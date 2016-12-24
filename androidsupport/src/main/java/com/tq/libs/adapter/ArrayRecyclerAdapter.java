@@ -10,7 +10,7 @@ package com.tq.libs.adapter;
 
 import android.content.Context;
 
-import com.tq.libs.exception.RangeException;
+import com.jarklee.essential.exception.RangeException;
 
 import java.util.ArrayList;
 import java.util.Collection;

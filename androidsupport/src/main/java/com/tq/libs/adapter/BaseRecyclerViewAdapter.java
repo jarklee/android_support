@@ -13,8 +13,8 @@ import android.support.annotation.CallSuper;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
+import com.jarklee.essential.common.Releasable;
 import com.tq.libs.R;
-import com.tq.libs.common.Releasable;
 
 import java.util.List;
 

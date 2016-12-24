@@ -15,8 +15,8 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.Messenger;
 
-import com.tq.libs.annotation.BindServiceFlag;
-import com.tq.libs.common.helper.ServiceHelper;
+import com.jarklee.essential.annotation.BindServiceFlag;
+import com.jarklee.essential.common.helper.ServiceHelper;
 
 import java.util.List;
 import java.util.Vector;
