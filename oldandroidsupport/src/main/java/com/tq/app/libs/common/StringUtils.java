@@ -10,6 +10,8 @@ package com.tq.app.libs.common;
 
 import com.google.common.base.Joiner;
 
+import java.util.Arrays;
+
 public class StringUtils {
 
     public static String join(final String joiner, final Object firstObject, final Object secondObject,
@@ -29,43 +31,26 @@ public class StringUtils {
         return s == null || s.length() == 0;
     }
 
-    public static String stringByTrimInSet(String s, String... trimSet) {
+    public static String stringByTrimInSet(final String s, char... trimSet) {
         if (trimSet == null || trimSet.length == 0) {
             return s;
         }
+        trimSet = Arrays.copyOf(trimSet, trimSet.length);
+        Arrays.sort(trimSet);
         StringBuilder builder = new StringBuilder(s);
-        int trimIndex = trimStringStartIndexInSet(builder, trimSet);
-        while (trimIndex != -1) {
-            builder.delete(0, trimSet[trimIndex].length());
-            trimIndex = trimStringStartIndexInSet(builder, trimSet);
-        }
-        trimIndex = trimStringEndIndexInSet(builder, trimSet);
         int stringLength = builder.length();
-        while (trimIndex != -1) {
-            builder.delete(stringLength - trimSet[trimIndex].length(), stringLength);
+        while (stringLength != 0
+                && Arrays.binarySearch(trimSet, builder.charAt(stringLength - 1)) >= 0) {
+            builder.deleteCharAt(stringLength - 1);
             stringLength = builder.length();
-            trimIndex = trimStringEndIndexInSet(builder, trimSet);
+        }
+        if (stringLength == 0) {
+            return "";
+        }
+        while (stringLength != 0 && Arrays.binarySearch(trimSet, builder.charAt(0)) >= 0) {
+            builder.deleteCharAt(0);
+            stringLength = builder.length();
         }
         return builder.toString();
-    }
-
-    private static int trimStringStartIndexInSet(StringBuilder builder, String[] trimSet) {
-        for (int i = 0; i < trimSet.length; i++) {
-            if (builder.indexOf(trimSet[i]) == 0) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private static int trimStringEndIndexInSet(StringBuilder builder, String[] trimSet) {
-        int stringLength = builder.length();
-        for (int i = 0; i < trimSet.length; i++) {
-            String trimString = trimSet[i];
-            if (builder.lastIndexOf(trimString) == stringLength - trimString.length()) {
-                return i;
-            }
-        }
-        return -1;
     }
 }
