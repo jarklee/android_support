@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -38,9 +39,46 @@ public class Utils {
         return granted;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
+    public static boolean hasPermissions(android.app.Fragment fragment, String... permissions) {
+        if (fragment == null) {
+            return false;
+        }
+        if (permissions == null) {
+            return false;
+        }
+        return hasPermissions(fragment.getActivity(), permissions);
+    }
+
+    public static boolean hasPermissions(android.support.v4.app.Fragment fragment, String... permissions) {
+        if (fragment == null) {
+            return false;
+        }
+        if (permissions == null) {
+            return false;
+        }
+        return hasPermissions(fragment.getContext(), permissions);
+    }
+
     public static void requestPermissions(Activity activity, int requestID, String... permissions) {
         if (activity != null && permissions != null) {
             ActivityCompat.requestPermissions(activity, permissions, requestID);
+        }
+    }
+
+    public static void requestPermissions(android.app.Fragment fragment, int requestID,
+                                          String... permissions) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (fragment != null && permissions != null) {
+                fragment.requestPermissions(permissions, requestID);
+            }
+        }
+    }
+
+    public static void requestPermissions(android.support.v4.app.Fragment fragment, int requestID,
+                                          String... permissions) {
+        if (fragment != null && permissions != null) {
+            fragment.requestPermissions(permissions, requestID);
         }
     }
 
