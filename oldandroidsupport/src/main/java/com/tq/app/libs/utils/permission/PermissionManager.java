@@ -26,7 +26,6 @@ import java.util.Map;
 
 public final class PermissionManager {
 
-
     private final Map<Integer, PermissionRequest> mPermissionRequests;
     private final Runnable mDefaultCancelAction;
 
@@ -95,36 +94,36 @@ public final class PermissionManager {
         }
     }
 
-    public final void executeAction(@NonNull final Runnable action,
-                                    @Nullable final String explainMessage,
-                                    final String... requirePermissions) {
-        executeAction(action, false, explainMessage, requirePermissions);
+    public final PermissionManager executeAction(@NonNull final Runnable action,
+                                                 @Nullable final String explainMessage,
+                                                 final String... requirePermissions) {
+        return executeAction(action, false, explainMessage, requirePermissions);
     }
 
-    public final void executeAction(@NonNull final Runnable action,
-                                    final boolean useDefaultCancelAction,
-                                    @Nullable final String explainMessage,
-                                    final String... requirePermissions) {
-        executeAction(action, useDefaultCancelAction ? mDefaultCancelAction : null,
+    public final PermissionManager executeAction(@NonNull final Runnable action,
+                                                 final boolean useDefaultCancelAction,
+                                                 @Nullable final String explainMessage,
+                                                 final String... requirePermissions) {
+        return executeAction(action, useDefaultCancelAction ? mDefaultCancelAction : null,
                 explainMessage, requirePermissions);
     }
 
-    public final void executeAction(@NonNull final Runnable action,
-                                    @Nullable final Runnable cancelAction,
-                                    @Nullable final String explainMessage,
-                                    final String... requirePermissions) {
-        executeAction(action, cancelAction, false, explainMessage, requirePermissions);
+    public final PermissionManager executeAction(@NonNull final Runnable action,
+                                                 @Nullable final Runnable cancelAction,
+                                                 @Nullable final String explainMessage,
+                                                 final String... requirePermissions) {
+        return executeAction(action, cancelAction, false, explainMessage, requirePermissions);
     }
 
-    public final void executeAction(@NonNull final Runnable action,
-                                    @Nullable final Runnable cancelAction,
-                                    final boolean useDefaultCancelAction,
-                                    @Nullable final String explainMessage,
-                                    final String... requirePermissions) {
+    public final PermissionManager executeAction(@NonNull final Runnable action,
+                                                 @Nullable final Runnable cancelAction,
+                                                 final boolean useDefaultCancelAction,
+                                                 @Nullable final String explainMessage,
+                                                 final String... requirePermissions) {
         IPermissionRequester permissionRequester = this.mPermissionRequester;
         if (permissionRequester.hasPermissions(requirePermissions)) {
             action.run();
-            return;
+            return this;
         }
         if (!permissionRequester.shouldRequestPermissions()) {
             if (cancelAction != null) {
@@ -132,7 +131,7 @@ public final class PermissionManager {
             } else if (useDefaultCancelAction && mDefaultCancelAction != null) {
                 mDefaultCancelAction.run();
             }
-            return;
+            return this;
         }
         final int requestId = action.hashCode();
         final PermissionRequest request = new PermissionRequest(action,
@@ -144,10 +143,54 @@ public final class PermissionManager {
                     requestId,
                     request,
                     requirePermissions);
-            return;
+            return this;
         }
         mPermissionRequests.put(requestId, request);
         permissionRequester.requestPermissions(requestId, requirePermissions);
+        return this;
+    }
+
+    public final PermissionManager checkAndRequestPermission(final @Nullable Runnable cancelAction,
+                                                             @Nullable final String explainMessage,
+                                                             final String... requirePermissions) {
+        return checkAndRequestPermission(cancelAction, false, explainMessage, requirePermissions);
+    }
+
+    private PermissionManager checkAndRequestPermission(final @Nullable Runnable cancelAction,
+                                                        boolean useDefaultCancelAction,
+                                                        final @Nullable String explainMessage,
+                                                        final String... requirePermissions) {
+        IPermissionRequester permissionRequester = this.mPermissionRequester;
+        if (permissionRequester.hasPermissions(requirePermissions)) {
+            return this;
+        }
+        if (!permissionRequester.shouldRequestPermissions()) {
+            if (cancelAction != null) {
+                cancelAction.run();
+            } else if (useDefaultCancelAction && mDefaultCancelAction != null) {
+                mDefaultCancelAction.run();
+            }
+            return this;
+        }
+        final PermissionRequest request = new PermissionRequest(null,
+                cancelAction == null ? useDefaultCancelAction ? mDefaultCancelAction : null : cancelAction);
+        final int requestId;
+        if (cancelAction != null) {
+            requestId = cancelAction.hashCode();
+        } else {
+            requestId = request.hashCode();
+        }
+        if (permissionRequester.shouldShowExplainMessage() && !StringUtils.empty(explainMessage)) {
+            permissionRequester.showExplainMessage(this,
+                    explainMessage,
+                    requestId,
+                    request,
+                    requirePermissions);
+            return this;
+        }
+        mPermissionRequests.put(requestId, request);
+        permissionRequester.requestPermissions(requestId, requirePermissions);
+        return this;
     }
 
     private static IPermissionRequester getPermissionRequester(Activity activity) {
