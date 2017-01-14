@@ -8,7 +8,6 @@
 
 package com.tq.app.libs.utils.permission;
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.tq.app.libs.common.StringUtils;
@@ -62,27 +61,27 @@ abstract class PermissionsRequestBaseQuery implements PermissionsRequestQuery {
     }
 
     @Override
-    public final void executeAction(@NonNull final Runnable action,
+    public final void executeAction(@Nullable final Runnable action,
                                     @Nullable final String explainMessage) {
         executeAction(action, false, explainMessage);
     }
 
     @Override
-    public final void executeAction(@NonNull final Runnable action,
+    public final void executeAction(@Nullable final Runnable action,
                                     final boolean useDefaultCancelAction,
                                     @Nullable final String explainMessage) {
         executeAction(action, null, useDefaultCancelAction, explainMessage);
     }
 
     @Override
-    public final void executeAction(@NonNull final Runnable action,
+    public final void executeAction(@Nullable final Runnable action,
                                     @Nullable final Runnable cancelAction,
                                     @Nullable final String explainMessage) {
         executeAction(action, cancelAction, false, explainMessage);
     }
 
     @Override
-    public final void executeAction(@NonNull final Runnable action,
+    public final void executeAction(@Nullable final Runnable action,
                                     @Nullable final Runnable cancelAction,
                                     final boolean useDefaultCancelAction,
                                     @Nullable final String explainMessage) {
@@ -95,7 +94,9 @@ abstract class PermissionsRequestBaseQuery implements PermissionsRequestQuery {
             mListPermissions.toArray(requirePermissions);
         }
         if (satisfyToRequestedPermissions()) {
-            action.run();
+            if (action != null) {
+                action.run();
+            }
             return;
         }
         if (!permissionRequester.shouldRequestPermissions()) {
@@ -107,12 +108,13 @@ abstract class PermissionsRequestBaseQuery implements PermissionsRequestQuery {
             }
             return;
         }
-        final int requestId = action.hashCode();
+
         Runnable canceler = cancelAction;
         if (canceler == null && useDefaultCancelAction) {
             canceler = mRequestManager.getDefaultCancelAction();
         }
         final PermissionRequest request = PermissionRequest.newRequest(action, canceler, mIsRequireAll);
+        final int requestId = mRequestManager.obtainRequestId(action == null ? request : action);
         if (permissionRequester.shouldShowExplainMessage()
                 && !StringUtils.empty(explainMessage)) {
             permissionRequester.showExplainMessage(mRequestManager,
