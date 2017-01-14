@@ -24,6 +24,8 @@ abstract class PermissionsRequestBaseQuery implements PermissionsRequestQuery {
     private final boolean mIsRequireAll;
     Set<String> mListPermissions;
 
+    private int mCurrentRequestId = 0;
+
     PermissionsRequestBaseQuery(PermissionManager requestManager, boolean requireAll) {
         this.mRequestManager = requestManager;
         this.mIsRequireAll = requireAll;
@@ -158,7 +160,7 @@ abstract class PermissionsRequestBaseQuery implements PermissionsRequestQuery {
             canceler = mRequestManager.getDefaultCancelAction();
         }
         final PermissionRequest request = PermissionRequest.newCancelOnly(canceler, mIsRequireAll);
-        final int requestId = cancelAction == null ? request.hashCode() : cancelAction.hashCode();
+        final int requestId = mRequestManager.obtainRequestId(request);
         if (permissionRequester.shouldShowExplainMessage()
                 && !StringUtils.empty(explainMessage)) {
             permissionRequester.showExplainMessage(mRequestManager,
