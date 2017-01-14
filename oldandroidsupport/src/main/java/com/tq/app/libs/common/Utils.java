@@ -27,7 +27,7 @@ public class Utils {
             return false;
         }
         if (permissions == null) {
-            return false;
+            return true;
         }
         boolean granted = true;
         for (String permission : permissions) {
@@ -45,7 +45,7 @@ public class Utils {
             return false;
         }
         if (permissions == null) {
-            return false;
+            return true;
         }
         return hasPermissions(fragment.getActivity(), permissions);
     }
@@ -55,9 +55,48 @@ public class Utils {
             return false;
         }
         if (permissions == null) {
-            return false;
+            return true;
         }
         return hasPermissions(fragment.getContext(), permissions);
+    }
+
+    public static boolean hasOnePermissions(Context context, String... permissions) {
+        if (context == null) {
+            return false;
+        }
+        if (permissions == null) {
+            return true;
+        }
+        boolean granted = false;
+        for (String permission : permissions) {
+            if (ActivityCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                granted = true;
+                break;
+            }
+        }
+        return granted;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
+    public static boolean hasOnePermissions(android.app.Fragment fragment, String... permissions) {
+        if (fragment == null) {
+            return false;
+        }
+        if (permissions == null) {
+            return true;
+        }
+        return hasPermissions(fragment.getActivity(), permissions);
+    }
+
+    public static boolean hasOnePermissions(android.support.v4.app.Fragment fragment, String...
+            permissions) {
+        if (fragment == null) {
+            return false;
+        }
+        if (permissions == null) {
+            return true;
+        }
+        return hasOnePermissions(fragment.getContext(), permissions);
     }
 
     public static void requestPermissions(Activity activity, int requestID, String... permissions) {
@@ -90,6 +129,20 @@ public class Utils {
         for (int grantedResult : grantedResults) {
             if (grantedResult != PackageManager.PERMISSION_GRANTED) {
                 granted = false;
+                break;
+            }
+        }
+        return granted;
+    }
+
+    public static boolean onePermissionsGranted(int[] grantedResults) {
+        if (grantedResults == null) {
+            return true;
+        }
+        boolean granted = false;
+        for (int grantedResult : grantedResults) {
+            if (grantedResult == PackageManager.PERMISSION_GRANTED) {
+                granted = true;
                 break;
             }
         }
