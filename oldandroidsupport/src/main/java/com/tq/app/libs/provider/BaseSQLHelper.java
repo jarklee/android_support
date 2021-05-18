@@ -14,7 +14,8 @@ import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 public abstract class BaseSQLHelper extends SQLiteOpenHelper {
     public BaseSQLHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {

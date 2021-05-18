@@ -8,7 +8,7 @@
 
 package com.tq.app.libs.utils.permission;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.tq.app.libs.common.StringUtils;
 

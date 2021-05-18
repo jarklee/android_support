@@ -13,10 +13,12 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.ActivityCompat;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
 
 import java.io.File;
 
@@ -50,7 +52,7 @@ public class Utils {
         return hasPermissions(fragment.getActivity(), permissions);
     }
 
-    public static boolean hasPermissions(android.support.v4.app.Fragment fragment, String... permissions) {
+    public static boolean hasPermissions(Fragment fragment, String... permissions) {
         if (fragment == null) {
             return false;
         }
@@ -88,7 +90,7 @@ public class Utils {
         return hasPermissions(fragment.getActivity(), permissions);
     }
 
-    public static boolean hasOnePermissions(android.support.v4.app.Fragment fragment, String...
+    public static boolean hasOnePermissions(Fragment fragment, String...
             permissions) {
         if (fragment == null) {
             return false;
@@ -114,7 +116,7 @@ public class Utils {
         }
     }
 
-    public static void requestPermissions(android.support.v4.app.Fragment fragment, int requestID,
+    public static void requestPermissions(Fragment fragment, int requestID,
                                           String... permissions) {
         if (fragment != null && permissions != null) {
             fragment.requestPermissions(permissions, requestID);

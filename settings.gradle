@@ -1,4 +1,4 @@
-include ':androidsupport', ':kotlinandroidsupport', ':oldandroidsupport'
+include ':oldandroidsupport'
 /*
  * ******************************************************************************
  *  Copyright Ⓒ 2016. TrinhQuan. All right reserved

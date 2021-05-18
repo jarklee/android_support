@@ -9,10 +9,11 @@
 package com.tq.app.libs.adapter;
 
 import android.content.Context;
-import android.support.annotation.Nullable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+
+import androidx.annotation.Nullable;
 
 import com.tq.app.libs.R;
 import com.tq.app.libs.callback.OnAdapterCallback;

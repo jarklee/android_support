@@ -9,7 +9,8 @@
 package com.tq.app.libs.activity2;
 
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.Nullable;
 
 import com.tq.app.libs.activity.AbsActivity;
 import com.tq.app.libs.common.PresenterManager2;
