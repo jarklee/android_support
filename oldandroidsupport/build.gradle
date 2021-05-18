@@ -9,14 +9,18 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 
-group='com.github.jarklee'
+def groupName = 'com.github.jarklee'
+def artifactName = 'android_support'
+def tagVersion = "1.1.1-1"
+
+group = groupName
 
 android {
     compileSdkVersion 30
     buildToolsVersion '29.0.2'
 
     defaultConfig {
-        minSdkVersion 10
+        minSdkVersion 14
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -25,6 +29,25 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = groupName
+                artifactId = artifactName
+                version = "$tagVersion"
+            }
+            debug(MavenPublication) {
+                from components.debug
+                groupId = groupName
+                artifactId = artifactName
+                version = "$tagVersion"
+            }
         }
     }
 }
