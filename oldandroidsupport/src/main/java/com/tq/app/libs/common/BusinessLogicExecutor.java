@@ -14,49 +14,82 @@ import android.os.Looper;
 import com.tq.app.libs.exception.ParameterException;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class BusinessLogicExecutor {
-    private static ExecutorService mExecutorService;
-    private static boolean isInit = false;
-    private static Handler mWorkingHandler;
-    private static Handler mMainHandler;
+    private volatile static ExecutorService mWorkingTaskQueueExecutor;
+    private volatile static Thread mWorkingQueueThread;
+    private volatile static Handler mWorkingHandler;
+    private volatile static Handler mMainHandler;
+    private volatile static boolean mPendingInit = false;
     private static final Object lockObj = new Object();
 
-    public static void init() {
-        synchronized (lockObj) {
-            if (mExecutorService == null || !isInit) {
-                mExecutorService = Executors.newSingleThreadExecutor();
-                mExecutorService.submit(new WorkingThread());
-                try {
-                    while (mWorkingHandler == null) {
-                        lockObj.wait();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                isInit = true;
+    private static void waitInit() {
+        try {
+            while (mWorkingHandler == null) {
+                lockObj.wait();
             }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+    }
+
+    private static void initIfNeed() {
+        synchronized (lockObj) {
+            if (mPendingInit) {
+                waitInit();
+                return;
+            }
+            mPendingInit = true;
+            mWorkingTaskQueueExecutor = new ThreadPoolExecutor(
+                    0,
+                    maxWorkingThreads(),
+                    60L, TimeUnit.SECONDS,
+                    new SynchronousQueue<>());
+            mWorkingQueueThread = new Thread(() -> {
+                Looper.prepare();
+                synchronized (lockObj) {
+                    mWorkingHandler = new Handler(Looper.myLooper());
+                    mPendingInit = false;
+                    lockObj.notifyAll();
+                }
+                Looper.loop();
+            });
+            mWorkingQueueThread.start();
+            waitInit();
+        }
+    }
+
+    private static boolean isWorkingQueue(Handler queue) {
+        Handler workingQueue = mWorkingHandler;
+        if (workingQueue == null) {
+            return queue.getLooper() != Looper.getMainLooper();
+        }
+        return workingQueue == queue;
+    }
+
+    private static int maxWorkingThreads() {
+        return Math.min(Runtime.getRuntime().availableProcessors() * 2, 16);
     }
 
     public static void release() {
         synchronized (lockObj) {
+            if (mPendingInit) {
+                waitInit();
+            }
             if (mWorkingHandler != null) {
                 mWorkingHandler.getLooper().quit();
                 mWorkingHandler = null;
             }
-            if (TaskWrapper.mExecutorService != null) {
-                TaskWrapper.mExecutorService.shutdown();
-                TaskWrapper.mExecutorService = null;
+            if (mWorkingTaskQueueExecutor != null) {
+                mWorkingTaskQueueExecutor.shutdown();
+                mWorkingTaskQueueExecutor = null;
             }
+            mWorkingQueueThread = null;
             mMainHandler = null;
-            if (isInit) {
-                mExecutorService.shutdown();
-                mExecutorService = null;
-            }
-            isInit = false;
             lockObj.notifyAll();
         }
     }
@@ -78,7 +111,7 @@ public class BusinessLogicExecutor {
             if (queue == mMainHandler) {
                 queue.postDelayed(task, delayMillis);
             } else {
-                TaskWrapper taskWrapper = new TaskWrapper(task, queue);
+                WorkingTaskWrapper taskWrapper = new WorkingTaskWrapper(task, queue);
                 queue.postDelayed(taskWrapper, delayMillis);
             }
         }
@@ -90,17 +123,17 @@ public class BusinessLogicExecutor {
 
     public static FutureHolder future_async_after(Handler queue, Runnable task, long delayMillis) {
         if (queue == null) {
-            throw new ParameterException("Queue can not be null for dispatch");
+            initIfNeed();
+            queue = mWorkingHandler;
         }
-        if (task != null) {
+        if (task != null && queue != null) {
             FutureHolder futureHolder;
-            if (queue == mMainHandler) {
-                futureHolder = new FutureHolderImpl(task, queue);
-                queue.postDelayed(futureHolder, delayMillis);
+            if (isWorkingQueue(queue)) {
+                futureHolder = new WorkingTaskWrapper(task, queue);
             } else {
-                futureHolder = new TaskWrapper(task, queue);
-                queue.postDelayed(futureHolder, delayMillis);
+                futureHolder = new FutureHolderImpl(task, queue);
             }
+            queue.postDelayed(futureHolder, delayMillis);
             return futureHolder;
         }
         return null;
@@ -118,9 +151,7 @@ public class BusinessLogicExecutor {
     }
 
     public static Handler getWorkingQueue() {
-        if (!isInit) {
-            init();
-        }
+        initIfNeed();
         return mWorkingHandler;
     }
 
@@ -134,11 +165,11 @@ public class BusinessLogicExecutor {
     }
 
     private static class FutureHolderImpl implements FutureHolder {
-        private final Runnable callback;
+        private final Runnable runner;
         private final Handler queue;
 
-        public FutureHolderImpl(Runnable callback, Handler queue) {
-            this.callback = callback;
+        public FutureHolderImpl(Runnable runner, Handler queue) {
+            this.runner = runner;
             this.queue = queue;
         }
 
@@ -163,51 +194,38 @@ public class BusinessLogicExecutor {
 
         @Override
         public void run() {
-            if (callback != null) {
-                callback.run();
+            if (runner != null) {
+                runner.run();
             }
         }
 
-        public Runnable getCallback() {
-            return callback;
+        public Runnable getRunner() {
+            return runner;
         }
     }
 
-    private static class TaskWrapper extends FutureHolderImpl {
+    private static class WorkingTaskWrapper extends FutureHolderImpl {
+        private Future<?> future;
 
-        private static ExecutorService mExecutorService;
-        private Future<?> futureTask;
-
-        public TaskWrapper(Runnable callback, Handler queue) {
+        public WorkingTaskWrapper(Runnable callback, Handler queue) {
             super(callback, queue);
         }
 
         @Override
         public void run() {
-            if (mExecutorService == null) {
-                mExecutorService = Executors.newCachedThreadPool();
+            ExecutorService executorService = mWorkingTaskQueueExecutor;
+            if (executorService == null) { // service has been drop
+                return;
             }
-            futureTask = mExecutorService.submit(getCallback());
+            future = executorService.submit(getRunner());
         }
 
         @Override
         public void cancel() {
             super.cancel();
-            if (futureTask != null) {
-                futureTask.cancel(true);
+            if (future != null) {
+                future.cancel(true);
             }
-        }
-    }
-
-    private static class WorkingThread implements Runnable {
-        @Override
-        public void run() {
-            Looper.prepare();
-            synchronized (lockObj) {
-                mWorkingHandler = new Handler(Looper.myLooper());
-                lockObj.notifyAll();
-            }
-            Looper.loop();
         }
     }
 }
