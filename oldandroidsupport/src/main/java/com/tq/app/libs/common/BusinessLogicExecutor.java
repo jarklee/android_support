@@ -8,11 +8,19 @@
 
 package com.tq.app.libs.common;
 
+import android.os.Binder;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.tq.app.libs.exception.ParameterException;
 
+import java.lang.ref.WeakReference;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
@@ -22,14 +30,13 @@ import java.util.concurrent.TimeUnit;
 public class BusinessLogicExecutor {
     private volatile static ExecutorService mWorkingTaskQueueExecutor;
     private volatile static Thread mWorkingQueueThread;
-    private volatile static Handler mWorkingHandler;
-    private volatile static Handler mMainHandler;
+    private volatile static Pool mWorkingPool;
     private volatile static boolean mPendingInit = false;
     private static final Object lockObj = new Object();
 
     private static void waitInit() {
         try {
-            while (mWorkingHandler == null) {
+            while (mWorkingPool == null) {
                 lockObj.wait();
             }
         } catch (InterruptedException e) {
@@ -47,12 +54,12 @@ public class BusinessLogicExecutor {
             mWorkingTaskQueueExecutor = new ThreadPoolExecutor(
                     0,
                     maxWorkingThreads(),
-                    60L, TimeUnit.SECONDS,
+                    30L, TimeUnit.SECONDS,
                     new SynchronousQueue<>());
             mWorkingQueueThread = new Thread(() -> {
                 Looper.prepare();
                 synchronized (lockObj) {
-                    mWorkingHandler = new Handler(Looper.myLooper());
+                    mWorkingPool = new BackgroundWorkerPool(new Handler(Looper.myLooper()));
                     mPendingInit = false;
                     lockObj.notifyAll();
                 }
@@ -61,14 +68,6 @@ public class BusinessLogicExecutor {
             mWorkingQueueThread.start();
             waitInit();
         }
-    }
-
-    private static boolean isWorkingQueue(Handler queue) {
-        Handler workingQueue = mWorkingHandler;
-        if (workingQueue == null) {
-            return queue.getLooper() != Looper.getMainLooper();
-        }
-        return workingQueue == queue;
     }
 
     private static int maxWorkingThreads() {
@@ -80,151 +79,259 @@ public class BusinessLogicExecutor {
             if (mPendingInit) {
                 waitInit();
             }
-            if (mWorkingHandler != null) {
-                mWorkingHandler.getLooper().quit();
-                mWorkingHandler = null;
+            if (mWorkingPool != null) {
+                mWorkingPool.quit();
+                mWorkingPool = null;
             }
             if (mWorkingTaskQueueExecutor != null) {
                 mWorkingTaskQueueExecutor.shutdown();
                 mWorkingTaskQueueExecutor = null;
             }
             mWorkingQueueThread = null;
-            mMainHandler = null;
+            AndroidMainPool.releaseInstance();
             lockObj.notifyAll();
         }
     }
 
-    public static void dispatch_async_remove(Handler queue, Runnable task) {
-        if (queue == null) {
-            throw new ParameterException("Queue can not be null for removed");
+    public static void dispatch_async_remove(Pool pool, Runnable task) {
+        if (pool == null) {
+            throw new ParameterException("Pool can not be null for removed");
         }
         if (task != null) {
-            queue.removeCallbacks(task);
+            pool.remove(task);
         }
     }
 
-    public static void dispatch_async_after(Handler queue, Runnable task, long delayMillis) {
-        if (queue == null) {
-            throw new ParameterException("Queue can not be null for dispatch");
-        }
-        if (task != null) {
-            if (queue == mMainHandler) {
-                queue.postDelayed(task, delayMillis);
-            } else {
-                WorkingTaskWrapper taskWrapper = new WorkingTaskWrapper(task, queue);
-                queue.postDelayed(taskWrapper, delayMillis);
-            }
-        }
-    }
-
-    public static void dispatch_async(Handler queue, Runnable task) {
-        dispatch_async_after(queue, task, 0);
-    }
-
-    public static FutureHolder future_async_after(Handler queue, Runnable task, long delayMillis) {
-        if (queue == null) {
+    @Nullable
+    public static CancelToken dispatch_async_after(Pool pool, Runnable task, long delayMillis) {
+        if (pool == null) {
             initIfNeed();
-            queue = mWorkingHandler;
+            pool = mWorkingPool;
         }
-        if (task != null && queue != null) {
-            FutureHolder futureHolder;
-            if (isWorkingQueue(queue)) {
-                futureHolder = new WorkingTaskWrapper(task, queue);
-            } else {
-                futureHolder = new FutureHolderImpl(task, queue);
-            }
-            queue.postDelayed(futureHolder, delayMillis);
-            return futureHolder;
+        if (task != null && pool != null) {
+            return pool.postDelay(task, delayMillis);
         }
         return null;
     }
 
-    public static FutureHolder future_async(Handler queue, Runnable task) {
-        return future_async_after(queue, task, 0);
+    @Nullable
+    public static CancelToken dispatch_async(Pool pool, Runnable task) {
+        return dispatch_async_after(pool, task, 0);
     }
 
-    public static Handler getMainQueue() {
-        if (mMainHandler == null || Looper.getMainLooper() != mMainHandler.getLooper()) {
-            mMainHandler = new Handler(Looper.getMainLooper());
-        }
-        return mMainHandler;
+    public static Pool getMainQueue() {
+        return AndroidMainPool.getInstance();
     }
 
-    public static Handler getWorkingQueue() {
+    public static Pool getWorkingQueue() {
         initIfNeed();
-        return mWorkingHandler;
+        return mWorkingPool;
     }
 
-    public interface FutureHolder extends Runnable {
+    public interface Pool {
+        @NonNull
+        CancelToken post(@NonNull Runnable task);
 
-        void enqueue();
+        @NonNull
+        CancelToken postDelay(@NonNull Runnable task, @IntRange(from = 0) long delay);
 
-        void enqueueDelay(long delay);
+        void remove(@NonNull Runnable task);
 
+        void quit();
+    }
+
+    public interface CancelToken {
         void cancel();
     }
 
-    private static class FutureHolderImpl implements FutureHolder {
-        private final Runnable runner;
-        private final Handler queue;
+    private static class AndroidMainPool implements Pool {
+        private static AndroidMainPool instance;
 
-        public FutureHolderImpl(Runnable runner, Handler queue) {
-            this.runner = runner;
-            this.queue = queue;
-        }
-
-        @Override
-        public void enqueue() {
-            enqueueDelay(0);
-        }
-
-        @Override
-        public void enqueueDelay(long delay) {
-            if (queue != null) {
-                queue.postDelayed(this, delay);
+        public synchronized static AndroidMainPool getInstance() {
+            if (instance == null) {
+                instance = new AndroidMainPool();
+                return instance;
             }
+            if (instance.mainScheduler.getLooper() != Looper.getMainLooper()) {
+                instance = new AndroidMainPool();
+            }
+            return instance;
+        }
+
+        public synchronized static void releaseInstance() {
+            instance = null;
+        }
+
+        private final Handler mainScheduler;
+
+        AndroidMainPool() {
+            mainScheduler = new Handler(Looper.getMainLooper());
+        }
+
+        @NonNull
+        @Override
+        public CancelToken post(@NonNull Runnable task) {
+            return postDelay(task, 0);
+        }
+
+        @NonNull
+        @Override
+        public CancelToken postDelay(@NonNull Runnable task, long delay) {
+            mainScheduler.postDelayed(task, delay);
+            return new PoolTaskCancelToken(this, task);
         }
 
         @Override
-        public void cancel() {
-            if (queue != null) {
-                queue.removeCallbacks(this);
-            }
+        public void remove(@NonNull Runnable task) {
+            mainScheduler.removeCallbacks(task);
         }
 
         @Override
-        public void run() {
-            if (runner != null) {
-                runner.run();
-            }
-        }
-
-        public Runnable getRunner() {
-            return runner;
+        public void quit() {
+            // do nothing
         }
     }
 
-    private static class WorkingTaskWrapper extends FutureHolderImpl {
-        private Future<?> future;
+    private static class BackgroundWorkerPool implements Pool {
+        private final Handler workingScheduler;
+        private final Map<Object, RunnerWrapper> taskActualMap = new WeakHashMap<>();
 
-        public WorkingTaskWrapper(Runnable callback, Handler queue) {
-            super(callback, queue);
+        public BackgroundWorkerPool(Handler handler) {
+            this.workingScheduler = handler;
+        }
+
+        @NonNull
+        @Override
+        public CancelToken post(@NonNull Runnable task) {
+            return postDelay(task, 0);
+        }
+
+        @NonNull
+        @Override
+        public CancelToken postDelay(@NonNull Runnable task, long delay) {
+            RunnerWrapper taskActual = new RunnerWrapper(task);
+            workingScheduler.postDelayed(taskActual, delay);
+            registerTaskActual(task, taskActual);
+            return new PoolTaskCancelToken(this, taskActual);
         }
 
         @Override
-        public void run() {
-            ExecutorService executorService = mWorkingTaskQueueExecutor;
-            if (executorService == null) { // service has been drop
-                return;
+        public void remove(@NonNull Runnable task) {
+            if (task instanceof RunnerWrapper) {
+                workingScheduler.removeCallbacks(task);
+                ((RunnerWrapper) task).cancel();
+            } else {
+                RunnerWrapper taskActual = locateTaskActual(task);
+                if (taskActual != null) {
+                    remove(taskActual);
+                }
             }
-            future = executorService.submit(getRunner());
+        }
+
+        @Override
+        public void quit() {
+            Looper looper = workingScheduler.getLooper();
+            if (looper != null) {
+                looper.quit();
+            }
+        }
+
+        private RunnerWrapper locateTaskActual(Object key) {
+            synchronized (taskActualMap) {
+                return taskActualMap.get(key);
+            }
+        }
+
+        private void registerTaskActual(Object key, RunnerWrapper task) {
+            synchronized (taskActualMap) {
+                if (task == null) {
+                    taskActualMap.remove(key);
+                } else {
+                    taskActualMap.put(key, task);
+                }
+            }
+        }
+
+        private void removeTaskActual(Object key) {
+            synchronized (taskActualMap) {
+                taskActualMap.remove(key);
+            }
+        }
+
+        private class RunnerWrapper implements Runnable, CancelToken {
+            private final Runnable runner;
+            private volatile boolean canceled = false;
+            private volatile Future<?> runnerFuture;
+
+            public RunnerWrapper(Runnable runner) {
+                this.runner = runner;
+            }
+
+            @Override
+            public void run() {
+                removeTaskActual(runner);
+                if (canceled) {
+                    return;
+                }
+                ExecutorService executorService = mWorkingTaskQueueExecutor;
+                if (executorService == null) { // service has been drop
+                    return;
+                }
+                runnerFuture = executorService.submit(new FlushReferenceRunnable(runner));
+            }
+
+            @Override
+            public void cancel() {
+                canceled = true;
+                removeTaskActual(runner);
+                if (runnerFuture != null) {
+                    runnerFuture.cancel(true);
+                }
+            }
+        }
+    }
+
+    private static class PoolTaskCancelToken implements CancelToken {
+
+        private final WeakReference<Pool> pool;
+        private final WeakReference<Runnable> task;
+        private boolean canceled = false;
+
+        PoolTaskCancelToken(Pool pool, Runnable task) {
+            this.pool = new WeakReference<>(pool);
+            this.task = new WeakReference<>(task);
         }
 
         @Override
         public void cancel() {
-            super.cancel();
-            if (future != null) {
-                future.cancel(true);
+            if (canceled) {
+                return;
+            }
+            canceled = true;
+            Pool pool = this.pool.get();
+            if (pool == null) {
+                return;
+            }
+            Runnable task = this.task.get();
+            if (task != null) {
+                pool.remove(task);
+            }
+        }
+    }
+
+    private static class FlushReferenceRunnable implements Runnable {
+        private final Runnable runnable;
+
+        FlushReferenceRunnable(Runnable runnable) {
+            this.runnable = runnable;
+        }
+
+        @Override
+        public void run() {
+            try {
+                runnable.run();
+            } finally {
+                Binder.flushPendingCommands();
             }
         }
     }
