@@ -50,6 +50,9 @@ public class BusinessLogicExecutor {
                 waitInit();
                 return;
             }
+            if (mWorkingPool != null) {
+                return;
+            }
             mPendingInit = true;
             mWorkingTaskQueueExecutor = new ThreadPoolExecutor(
                     0,
