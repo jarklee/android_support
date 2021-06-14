@@ -23,7 +23,8 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -51,11 +52,13 @@ public class BusinessLogicExecutor {
                 return;
             }
             mPendingInit = true;
-            mWorkingTaskQueueExecutor = new ThreadPoolExecutor(
+            ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(
                     0,
                     maxWorkingThreads(),
-                    30L, TimeUnit.SECONDS,
-                    new SynchronousQueue<>());
+                    10L, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>());
+            poolExecutor.setRejectedExecutionHandler(new NewThreadOnRejectHandler());
+            mWorkingTaskQueueExecutor = new FinalizableDelegatedExecutorService(poolExecutor);
             mWorkingQueueThread = new Thread(() -> {
                 Looper.prepare();
                 synchronized (lockObj) {
@@ -333,6 +336,15 @@ public class BusinessLogicExecutor {
             } finally {
                 Binder.flushPendingCommands();
             }
+        }
+    }
+
+    private static class NewThreadOnRejectHandler implements RejectedExecutionHandler {
+
+        @Override
+        public void rejectedExecution(@NonNull Runnable r, @NonNull ThreadPoolExecutor executor) {
+            Thread t = executor.getThreadFactory().newThread(r);
+            t.start();
         }
     }
 }
