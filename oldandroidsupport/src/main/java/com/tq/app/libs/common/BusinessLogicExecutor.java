@@ -47,6 +47,9 @@ public class BusinessLogicExecutor {
 
     private static void initIfNeed() {
         synchronized (lockObj) {
+            if (mWorkingPool != null) {
+                return;
+            }
             if (mPendingInit) {
                 waitInit();
                 return;
