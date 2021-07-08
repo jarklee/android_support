@@ -8,7 +8,6 @@
 
 package com.tq.app.libs.common;
 
-import android.os.Binder;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -283,7 +282,7 @@ public class BusinessLogicExecutor {
                 if (executorService == null) { // service has been drop
                     return;
                 }
-                runnerFuture = executorService.submit(new FlushReferenceRunnable(runner));
+                runnerFuture = executorService.submit(runner);
             }
 
             @Override
@@ -321,23 +320,6 @@ public class BusinessLogicExecutor {
             Runnable task = this.task.get();
             if (task != null) {
                 pool.remove(task);
-            }
-        }
-    }
-
-    private static class FlushReferenceRunnable implements Runnable {
-        private final Runnable runnable;
-
-        FlushReferenceRunnable(Runnable runnable) {
-            this.runnable = runnable;
-        }
-
-        @Override
-        public void run() {
-            try {
-                runnable.run();
-            } finally {
-                Binder.flushPendingCommands();
             }
         }
     }
