@@ -76,7 +76,8 @@ public class BusinessLogicExecutor {
     }
 
     private static int maxWorkingThreads() {
-        return Math.min(Runtime.getRuntime().availableProcessors() * 2, 16);
+        int processes = Runtime.getRuntime().availableProcessors() * 2;
+        return Math.max(Math.min(processes, 16), 8);
     }
 
     public static void release() {
