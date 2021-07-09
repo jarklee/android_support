@@ -28,6 +28,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class BusinessLogicExecutor {
+
+    @Nullable
+    private volatile static Provider<ExecutorService> mExecutorFactory;
     private volatile static ExecutorService mWorkingTaskQueueExecutor;
     private volatile static Thread mWorkingQueueThread;
     private volatile static Pool mWorkingPool;
@@ -54,12 +57,18 @@ public class BusinessLogicExecutor {
                 return;
             }
             mPendingInit = true;
-            ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(
-                    0,
-                    maxWorkingThreads(),
-                    10L, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>());
-            poolExecutor.setRejectedExecutionHandler(new NewThreadOnRejectHandler());
+            Provider<ExecutorService> poolFactory = mExecutorFactory;
+            ExecutorService poolExecutor;
+            if (poolFactory == null) {
+                poolExecutor = new ThreadPoolExecutor(
+                        0,
+                        maxWorkingThreads(),
+                        10L, TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<>());
+                ((ThreadPoolExecutor) poolExecutor).setRejectedExecutionHandler(new NewThreadOnRejectHandler());
+            } else {
+                poolExecutor = poolFactory.provide();
+            }
             mWorkingTaskQueueExecutor = new FinalizableDelegatedExecutorService(poolExecutor);
             mWorkingQueueThread = new Thread(() -> {
                 Looper.prepare();
@@ -97,6 +106,14 @@ public class BusinessLogicExecutor {
             AndroidMainPool.releaseInstance();
             lockObj.notifyAll();
         }
+    }
+
+    public static void setWorkingExecutorFactory(@Nullable Provider<ExecutorService> executorFactory) {
+        Provider<ExecutorService> current = mExecutorFactory;
+        if (current != mExecutorFactory) {
+            release();
+        }
+        mExecutorFactory = executorFactory;
     }
 
     public static void dispatch_async_remove(Pool pool, Runnable task) {
